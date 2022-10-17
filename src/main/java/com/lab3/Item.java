@@ -1,4 +1,4 @@
-package com.example.servlet;
+package com.lab3;
 
 import org.apache.commons.io.FileUtils;
 
