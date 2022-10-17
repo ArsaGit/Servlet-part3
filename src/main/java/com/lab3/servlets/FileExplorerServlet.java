@@ -26,7 +26,6 @@ public class FileExplorerServlet extends HttpServlet {
 
         String root_dir = "/zzz/xxx/TestDir/users/";
 
-
         Object user = req.getSession().getAttribute("user");
         if(user == null){
             resp.sendRedirect("/Servlet-part3/login");

@@ -18,6 +18,13 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        HttpSession session = req.getSession();
+        Object user = session.getAttribute("user");
+        if(user != null){
+            resp.sendRedirect("/Servlet-part3/files?path=/zzz/xxx/TestDir/users/" + user.toString());
+            return;
+        }
+
         req.getRequestDispatcher("loginPage.jsp").forward(req, resp);
     }
 
@@ -48,8 +55,10 @@ public class LoginServlet extends HttpServlet {
 
         HttpSession session = req.getSession();
         session.setAttribute("user", login);
+
         Cookie ck = new Cookie("sessionId", session.getId());
         resp.addCookie(ck);
+
         ac.addSession(session.getId(), profile);
 
         resp.sendRedirect("/Servlet-part3/files?path=" + root_dir + login); //+user_dir
