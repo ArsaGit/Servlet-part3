@@ -1,42 +1,24 @@
 package com.lab3.database;
 
 import com.lab3.accounts.UserProfile;
-
-import java.sql.Connection;
-import java.sql.SQLException;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 
 public class UsersDAO {
-    private final QueryExecutor queryExecutor;
+    private Session session;
 
-    public UsersDAO(Connection connection) {
-        this.queryExecutor = new QueryExecutor(connection);
+    public UsersDAO(Session session) {
+        this.session = session;
     }
 
-    public UserProfile getUserByLogin(String login) throws SQLException {
-        return queryExecutor.execQuery(
-                "select * from users where login = '" + login + "';",
-                result -> {
-                    result.next();
-                    return new UserProfile(
-                            result.getString(1),
-                            result.getString(2),
-                            result.getString(3)
-                    );
-                });
+    public UserProfile getUserByLogin(String login) throws HibernateException {
+        Criteria criteria = session.createCriteria(UserProfile.class);
+        return (UserProfile) criteria.add(Restrictions.eq("login", login)).uniqueResult();
     }
 
-    public void insertUser(UserProfile userProfile) throws SQLException {
-        queryExecutor.execUpdate(String.format("insert into users values ('%s', '%s', '%s');",
-                userProfile.getLogin(), userProfile.getEmail(), userProfile.getPass()));
-    }
-
-    public void createTable() throws SQLException {
-        queryExecutor.execUpdate(
-                "create table if not exists users(" +
-                        "login varchar(100) primary key,email varchar(100),password varchar(100));");
-    }
-
-    public void dropTable() throws SQLException {
-        queryExecutor.execUpdate("drop table users;");
+    public void insertUser(UserProfile userProfile) throws HibernateException {
+        session.save(userProfile);
     }
 }

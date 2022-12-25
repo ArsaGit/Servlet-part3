@@ -1,23 +1,32 @@
 package com.lab3.database;
 
 import com.lab3.accounts.UserProfile;
-
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.service.ServiceRegistry;
 
 public class DBService {
-    private final Connection connection;
+    private static final String hibernate_show_sql = "true";
+    private static final String hibernate_hbm2ddl_auto = "update";
+    private final SessionFactory sessionFactory;
 
     public DBService() {
-        this.connection = getMysqlConnection();
+        Configuration configuration = getMySqlConfiguration();
+        sessionFactory = createSessionFactory(configuration);
     }
 
     public UserProfile getUserByLogin(String login) {
         try {
-            return (new UsersDAO(connection).getUserByLogin(login));
-        } catch (SQLException e) {
+            Session session = sessionFactory.openSession();
+            UsersDAO dao = new UsersDAO(session);
+            UserProfile dataSet = dao.getUserByLogin(login);
+            session.close();
+            return dataSet;
+        } catch (HibernateException e) {
             e.printStackTrace();
         }
         return null;
@@ -25,37 +34,36 @@ public class DBService {
 
     public void addUser(UserProfile userProfile) {
         try {
-            UsersDAO usersDAO = new UsersDAO(connection);
-            usersDAO.createTable();
-            usersDAO.insertUser(userProfile);
-            connection.commit();
-        } catch (SQLException e) {
+            Session session = sessionFactory.openSession();
+            Transaction transaction = session.beginTransaction();
+            UsersDAO dao = new UsersDAO(session);
+            dao.insertUser(userProfile);
+            transaction.commit();
+            session.close();
+        } catch (HibernateException e) {
             e.printStackTrace();
         }
     }
 
-    public static Connection getMysqlConnection() {
-        try {
-            DriverManager.registerDriver((Driver) Class.forName("com.mysql.jdbc.Driver").newInstance());
+    private Configuration getMySqlConfiguration() {
+        Configuration configuration = new Configuration();
+        configuration.addAnnotatedClass(UserProfile.class);
 
-            StringBuilder url = new StringBuilder();
+        configuration.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
+        configuration.setProperty("hibernate.connection.driver_class", "com.mysql.jdbc.Driver");
+        configuration.setProperty("hibernate.connection.url", "jdbc:mysql://localhost:3306/java_dev");
+        configuration.setProperty("hibernate.connection.username", "root");
+        configuration.setProperty("hibernate.connection.password", "1234");
+        configuration.setProperty("hibernate.show_sql", hibernate_show_sql);
+        configuration.setProperty("hibernate.hbm2ddl.auto", hibernate_hbm2ddl_auto);
+        return configuration;
+    }
 
-            url.
-                    append("jdbc:mysql://").        //db type
-                    append("localhost:").           //host name
-                    append("3306/").                //port
-                    append("java_dev?").          //db name
-                    append("user=root&").          //login
-                    append("password=1234");       //password
-
-            System.out.println("URL: " + url + "\n");
-
-            Connection connection = DriverManager.getConnection(url.toString());
-            return connection;
-        } catch (SQLException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
+    private static SessionFactory createSessionFactory(Configuration configuration) {
+        StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder();
+        builder.applySettings(configuration.getProperties());
+        ServiceRegistry serviceRegistry = builder.build();
+        return configuration.buildSessionFactory(serviceRegistry);
     }
 }
 
