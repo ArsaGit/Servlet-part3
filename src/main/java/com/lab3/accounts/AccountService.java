@@ -1,22 +1,22 @@
 package com.lab3.accounts;
 
+import com.lab3.database.DBService;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class AccountService {
-    private static final Map<String, UserProfile> loginToProfile = new HashMap<>();
+    private static final DBService dbService = new DBService();
     private static final Map<String, UserProfile> sessionIdToProfile = new HashMap<>();
 
     public AccountService() {
 
     }
 
-    public void addNewUser(UserProfile userProfile) {
-        loginToProfile.put(userProfile.getLogin(), userProfile);
-    }
+    public void addNewUser(UserProfile userProfile) { dbService.addUser(userProfile); }
 
     public UserProfile getUserByLogin(String login) {
-        return loginToProfile.get(login);
+        return dbService.getUserByLogin(login);
     }
 
     public UserProfile getUserBySessionId(String sessionId) {
@@ -29,9 +29,5 @@ public class AccountService {
 
     public void deleteSession(String sessionId) {
         sessionIdToProfile.remove(sessionId);
-    }
-
-    public void printUsers() {
-        loginToProfile.keySet().forEach(System.out::println);
     }
 }
